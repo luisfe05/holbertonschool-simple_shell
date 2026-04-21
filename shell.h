@@ -16,6 +16,6 @@ extern char **environ;
 void prompt(void);
 
 /* execute.c */
-void execute_command(char *line, char *program_name);
+void execute_command(char *line, char *program_name, int command_count);
 
 #endif

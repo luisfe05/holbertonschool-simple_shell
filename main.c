@@ -30,6 +30,7 @@ int main(int argc, char **argv)
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t nread;
+	int command_count = 0;
 
 	(void)argc;
 
@@ -57,8 +58,11 @@ int main(int argc, char **argv)
 		if (line[0] == '\0')
 			continue;
 
+		/* Count each real execution attempt for error messages */
+		command_count++;
+
 		/* Fork a child and execute the command */
-		execute_command(line, argv[0]);
+		execute_command(line, argv[0], command_count);
 	}
 
 	/* Free memory allocated by getline before exiting */
