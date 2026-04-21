@@ -9,7 +9,7 @@
  */
 void prompt(void)
 {
-	/* Only show the prompt if stdin is a terminal */
+	/* Only show the prompt if stdin is a terminal (interactive mode) */
 	if (isatty(STDIN_FILENO))
 		write(STDOUT_FILENO, "$ ", 2);
 }
@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t nread;
-	int command_count = 0;
 
+	/* argc is not used in Task 2, but required by main's prototype */
 	(void)argc;
 
 	while (1)
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 		/* Read a line from stdin; getline allocates memory for us */
 		nread = getline(&line, &len, stdin);
 
-		/* Check for EOF — getline returns -1 */
+		/* Check for EOF (Ctrl+D) — getline returns -1 */
 		if (nread == -1)
 		{
 			/* Print newline so the user's terminal prompt looks clean */
@@ -58,11 +58,8 @@ int main(int argc, char **argv)
 		if (line[0] == '\0')
 			continue;
 
-		/* Count each real execution attempt for error messages */
-		command_count++;
-
 		/* Fork a child and execute the command */
-		execute_command(line, argv[0], command_count);
+		execute_command(line, argv[0]);
 	}
 
 	/* Free memory allocated by getline before exiting */
