@@ -1,0 +1,8 @@
+# Compiled files
+*.o
+
+# Executable
+hsh
+
+# Mac metadata
+.DS_Store
