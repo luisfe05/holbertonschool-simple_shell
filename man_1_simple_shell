@@ -1,0 +1,92 @@
+.TH man 1 "April 2026" "1.0" "simple_shell man page"
+.SH NAME
+.B hsh
+\- simple UNIX command interpreter
+.SH SYNOPSIS
+.B hsh
+[\fIfile\fR]
+.SH DESCRIPTION
+.B hsh
+is a simple UNIX command line interpreter that reads commands from either
+standard input or a file and executes them. It is a simplified version of
+.BR sh (1).
+.PP
+When invoked without arguments,
+.B hsh
+reads commands from the standard input.
+.SH INVOCATION
+.B hsh
+can be used in two modes:
+.TP
+.B Interactive mode
+When standard input is a terminal, the shell displays a prompt
+.RB ( $ )
+and waits for the user to type a command, followed by a newline.
+.TP
+.B Non-interactive mode
+When standard input is not a terminal (for example, when input is piped
+or redirected from a file), the shell reads commands without displaying
+a prompt and executes them line by line.
+.SH BUILTINS
+.B hsh
+supports the following built-in commands:
+.TP
+.B exit
+Exits the shell.
+.TP
+.B env
+Prints the current environment, one variable per line in the form
+.IR name = value .
+.SH ENVIRONMENT
+.B hsh
+uses the
+.B PATH
+environment variable to locate executables when a command is entered
+without a full path. Each directory in
+.B PATH
+is searched in order until the command is found.
+.SH EXIT STATUS
+.B hsh
+returns the exit status of the last command executed.
+If a command is not found, the exit status is 127.
+On reaching end-of-file (Ctrl+D) or using the
+.B exit
+builtin, the shell exits with status 0.
+.SH EXAMPLES
+.PP
+Interactive mode:
+.PP
+.nf
+.RS
+$ ./hsh
+$ ls
+file1  file2  file3
+$ /bin/pwd
+/home/user
+$ exit
+.RE
+.fi
+.PP
+Non-interactive mode:
+.PP
+.nf
+.RS
+$ echo "ls" | ./hsh
+file1  file2  file3
+.RE
+.fi
+.SH SEE ALSO
+.BR sh (1),
+.BR bash (1),
+.BR execve (2),
+.BR fork (2)
+.SH BUGS
+No known bugs at this time.
+Please report any issues to the authors.
+.SH AUTHORS
+Luis Felipe Gonzalez (@luisfe05)
+.br
+Romeo Gonzalez (@RohMeOh)
+.SH COPYRIGHT
+Copyright (c) 2026. All rights reserved.
+This is free software; see the source for copying conditions. There is no
