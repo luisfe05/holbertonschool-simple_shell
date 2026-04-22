@@ -3,7 +3,7 @@
 /**
  * count_tokens - counts the number of tokens in a string
  * @line: the input string to count tokens in
- * @delim: the delimiter to split by
+ * @delim: the delimiter characters to split by
  *
  * Description: Makes a copy of the line and uses strtok to count
  * how many tokens exist. Uses a copy because strtok modifies
@@ -18,7 +18,7 @@ int count_tokens(char *line, char *delim)
 	char *copy;
 
 	/* Make a copy so strtok doesn't destroy the original line */
-	copy = strdup(line);
+	copy = _strdup(line);
 	if (copy == NULL)
 		return (0);
 
@@ -39,10 +39,10 @@ int count_tokens(char *line, char *delim)
  * tokenize - splits a line into an array of tokens
  * @line: the input string to split
  *
- * Description: Counts the tokens first, allocates an array big
- * enough to hold them all plus a NULL terminator, then fills the
- * array using strtok. The caller is responsible for freeing the
- * returned array.
+ * Description: Counts tokens first, allocates an array big enough
+ * to hold them all plus a NULL terminator, then fills the array
+ * using strtok. Splits by spaces, tabs, and newlines. The caller
+ * is responsible for freeing the returned array.
  *
  * Return: pointer to array of strings, or NULL on failure
  */
@@ -52,9 +52,12 @@ char **tokenize(char *line)
 	int i = 0;
 	char **args;
 	char *token;
+	char *delim = " \t\n";
 
 	/* Count tokens so we know how much memory to allocate */
-	count = count_tokens(line, " ");
+	count = count_tokens(line, delim);
+	if (count == 0)
+		return (NULL);
 
 	/* Allocate array: one slot per token plus one for NULL terminator */
 	args = malloc(sizeof(char *) * (count + 1));
@@ -62,12 +65,12 @@ char **tokenize(char *line)
 		return (NULL);
 
 	/* Split the line and fill the array */
-	token = strtok(line, " ");
+	token = strtok(line, delim);
 	while (token != NULL)
 	{
 		args[i] = token;
 		i++;
-		token = strtok(NULL, " ");
+		token = strtok(NULL, delim);
 	}
 
 	/* Last slot must be NULL — execve requires this */
