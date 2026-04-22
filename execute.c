@@ -1,53 +1,65 @@
 #include "shell.h"
 
 /**
- * execute_command - forks a child process and executes a command
- * @line: the command to execute (must be a full path in Task 2)
- * @program_name: name of the shell program (argv[0]) for error messages
+ * child_process - runs the command in the child process
+ * @args: array of command and arguments
+ * @program_name: name of the shell program for error messages
+ * @command_count: number of commands executed so far
  *
- * Description: Creates a child process with fork. The child replaces
- * itself with the command using execve. The parent waits for the child
- * to finish before returning. If execve fails, the child prints an
- * error and exits with code 127 (standard "command not found" code).
+ * Description: Tries to run the command with execve.
+ * If it fails, prints an error and exits.
  */
-void execute_command(char *line, char *program_name)
+void child_process(char **args, char *program_name, int command_count)
+{
+	/* try to run the command */
+	if (execve(args[0], args, environ) == -1)
+	{
+		/* if execve failed, print the error message */
+		fprintf(stderr, "%s: %d: %s: not found\n",
+			program_name, command_count, args[0]);
+		free(args);
+		exit(127);
+	}
+}
+
+/**
+ * execute_command - forks and runs a command
+ * @line: the full command line typed by the user
+ * @program_name: name of our shell, used in error messages
+ * @command_count: how many commands have run so far
+ *
+ * Description: Splits the line into tokens, forks a child,
+ * and runs the command. Parent waits for child to finish.
+ */
+void execute_command(char *line, char *program_name, int command_count)
 {
 	pid_t child_pid;
 	int status;
-	char *argv[2];
+	char **args;
 
-	/* Build the argv array that execve needs — must end in NULL */
-	argv[0] = line;
-	argv[1] = NULL;
+	/* split the line into words */
+	args = tokenize(line);
+	if (args == NULL)
+		return;
 
-	/* Create a child process — duplicates the current process */
+	/* create a child process */
 	child_pid = fork();
 
-	/* fork returns -1 on failure (e.g., system ran out of processes) */
+	/* fork failed */
 	if (child_pid == -1)
 	{
 		perror(program_name);
+		free(args);
 		return;
 	}
 
-	/* In the child process, fork returns 0 */
+	/* we are in the child process */
 	if (child_pid == 0)
-	{
-		/*
-		 * execve replaces the child's program with the requested one.
-		 * We pass environ so the new program inherits PATH, HOME, etc.
-		 * If execve returns, it means it failed.
-		 */
-		if (execve(line, argv, environ) == -1)
-		{
-			perror(program_name);
-			/* Exit with 127 = standard Unix code for "command not found" */
-			exit(127);
-		}
-	}
+		child_process(args, program_name, command_count);
 	else
 	{
-		/* In the parent process — wait for the child to finish */
+		/* we are in the parent, wait for child to finish */
 		wait(&status);
+		free(args);
 	}
 }
