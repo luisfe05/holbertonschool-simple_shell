@@ -13,7 +13,7 @@
 void child_process(char **args, char *full_path,
 		char *program_name, int command_count)
 {
-	/* Try to run the command with the full path we found */
+	/* try to run the command with the full path we found */
 	if (execve(full_path, args, environ) == -1)
 	{
 		fprintf(stderr, "%s: %d: %s: not found\n",
@@ -30,9 +30,9 @@ void child_process(char **args, char *full_path,
  * @program_name: name of our shell, used in error messages
  * @command_count: how many commands have run so far
  *
- * Description: Tokenizes the line, looks up the full path of the
- * command, and if found forks a child to run it. If the command
- * doesn't exist, prints an error WITHOUT forking (Task 4 rule).
+ * Description: Tokenizes the line, checks for builtins first,
+ * then looks up the full path and forks a child to run it.
+ * If the command doesn't exist, prints an error without forking.
  */
 void execute_command(char *line, char *program_name, int command_count)
 {
@@ -41,7 +41,7 @@ void execute_command(char *line, char *program_name, int command_count)
 	char **args;
 	char *full_path;
 
-	/* Split the line into tokens */
+	/* split the line into words */
 	args = tokenize(line);
 	if (args == NULL || args[0] == NULL)
 	{
@@ -49,7 +49,11 @@ void execute_command(char *line, char *program_name, int command_count)
 		return;
 	}
 
-	/* Find the full path of the command BEFORE forking */
+	/* check if it's a builtin before doing anything else */
+	if (is_builtin(args, program_name))
+		return;
+
+	/* find the full path of the command */
 	full_path = find_in_path(args[0]);
 	if (full_path == NULL)
 	{
@@ -59,7 +63,7 @@ void execute_command(char *line, char *program_name, int command_count)
 		return;
 	}
 
-	/* Create a child process to run the command */
+	/* create a child process */
 	child_pid = fork();
 	if (child_pid == -1)
 	{
@@ -73,6 +77,7 @@ void execute_command(char *line, char *program_name, int command_count)
 		child_process(args, full_path, program_name, command_count);
 	else
 	{
+		/* wait for child to finish then free memory */
 		wait(&status);
 		free(args);
 		free(full_path);

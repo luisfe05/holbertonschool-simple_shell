@@ -38,5 +38,9 @@ char *_getenv(const char *name);
 
 /* utils.c */
 char *_strdup(char *str);
+int _strcmp(char *s1, char *s2);
+
+/* builtins.c */
+int is_builtin(char **args, char *program_name);
 
 #endif
