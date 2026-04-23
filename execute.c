@@ -13,7 +13,6 @@
 void child_process(char **args, char *full_path,
 		char *program_name, int command_count)
 {
-	/* Try to run the command with the full path we found */
 	if (execve(full_path, args, environ) == -1)
 	{
 		print_error(program_name, command_count, args[0]);
@@ -24,48 +23,23 @@ void child_process(char **args, char *full_path,
 }
 
 /**
- * execute_command - forks and runs a command using PATH lookup
- * @line: the full command line typed by the user
- * @program_name: name of our shell, used in error messages
- * @command_count: how many commands have run so far
+ * fork_and_run - forks, runs the command, and returns exit status
+ * @args: array of command and arguments
+ * @full_path: the full path to the executable
+ * @program_name: name of the shell program
+ * @command_count: number of commands executed so far
  *
- * Description: Tokenizes the line, checks for builtins first,
- * then looks up the full path and forks a child to run it.
- * If the command doesn't exist, prints an error without forking.
+ * Description: Creates a child, runs child_process in it, waits
+ * for the child to finish, and returns its exit status.
  *
- * Return: -1 if the shell should exit (exit builtin), 0 otherwise
+ * Return: exit status of the child process
  */
-int execute_command(char *line, char *program_name, int command_count)
+int fork_and_run(char **args, char *full_path,
+		char *program_name, int command_count)
 {
 	pid_t child_pid;
 	int status;
-	int builtin_result;
-	char **args;
-	char *full_path;
 
-	/* Split the line into tokens */
-	args = tokenize(line);
-	if (args == NULL || args[0] == NULL)
-	{
-		free(args);
-		return (0);
-	}
-
-	/* Check if it's a builtin before doing anything else */
-	builtin_result = is_builtin(args, program_name);
-	if (builtin_result != 0)
-		return (builtin_result);
-
-	/* Find the full path of the command BEFORE forking */
-	full_path = find_in_path(args[0]);
-	if (full_path == NULL)
-	{
-		print_error(program_name, command_count, args[0]);
-		free(args);
-		return (0);
-	}
-
-	/* Create a child process to run the command */
 	child_pid = fork();
 	if (child_pid == -1)
 	{
@@ -77,11 +51,53 @@ int execute_command(char *line, char *program_name, int command_count)
 
 	if (child_pid == 0)
 		child_process(args, full_path, program_name, command_count);
-	else
-	{
-		wait(&status);
-		free(args);
-		free(full_path);
-	}
+
+	wait(&status);
+	free(args);
+	free(full_path);
+
+	/* Extract real exit code from status (shifted 8 bits in Unix) */
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
 	return (0);
+}
+
+/**
+ * execute_command - tokenizes, validates, and executes a command
+ * @line: the full command line typed by the user
+ * @program_name: name of our shell, used in error messages
+ * @command_count: how many commands have run so far
+ *
+ * Description: Tokenizes the line, checks for builtins, finds the
+ * command in PATH, and runs it. Returns the command's exit status
+ * so main can track it for the exit builtin.
+ *
+ * Return: exit status of the command, or -1 if exit builtin was used
+ */
+int execute_command(char *line, char *program_name, int command_count)
+{
+	char **args;
+	char *full_path;
+	int builtin_result;
+
+	args = tokenize(line);
+	if (args == NULL || args[0] == NULL)
+	{
+		free(args);
+		return (0);
+	}
+
+	builtin_result = is_builtin(args, program_name);
+	if (builtin_result != 0)
+		return (builtin_result);
+
+	full_path = find_in_path(args[0]);
+	if (full_path == NULL)
+	{
+		print_error(program_name, command_count, args[0]);
+		free(args);
+		return (127);
+	}
+
+	return (fork_and_run(args, full_path, program_name, command_count));
 }
