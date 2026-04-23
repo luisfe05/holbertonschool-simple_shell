@@ -22,10 +22,9 @@ int handle_line(char *line, ssize_t nread, char **argv,
 		int *command_count, int *exit_status);
 
 /* execute.c */
-/* execute.c */
 void child_process(char **args, char *full_path,
 		char *program_name, int command_count);
-int fork_and_run(char **args, char *full_path,
+int fork_and_wait(char **args, char *full_path,
 		char *program_name, int command_count);
 int execute_command(char *line, char *program_name, int command_count);
 
@@ -35,7 +34,7 @@ char **tokenize(char *line);
 
 /* path.c */
 char *build_full_path(char *dir, char *command);
-char *search_path_dirs(char *path_copy, char *command);
+char *try_paths(char *path_copy, char *command);
 char *find_in_path(char *command);
 
 /* _getenv.c */
@@ -52,4 +51,4 @@ void print_env(void);
 /* errors.c */
 void print_error(char *program_name, int command_count, char *command);
 
-#endif /* SHELL_H */
+#endif
