@@ -18,12 +18,12 @@ extern char **environ;
 
 /* main.c */
 void prompt(void);
-void handle_line(char *line, ssize_t nread, char **argv, int *command_count);
+int handle_line(char *line, ssize_t nread, char **argv, int *command_count);
 
 /* execute.c */
 void child_process(char **args, char *full_path,
 		char *program_name, int command_count);
-void execute_command(char *line, char *program_name, int command_count);
+int execute_command(char *line, char *program_name, int command_count);
 
 /* tokenize.c */
 int count_tokens(char *line, char *delim);
@@ -42,5 +42,9 @@ int _strcmp(char *s1, char *s2);
 
 /* builtins.c */
 int is_builtin(char **args, char *program_name);
+void print_env(void);
 
-#endif
+/* errors.c */
+void print_error(char *program_name, int command_count, char *command);
+
+#endif /* SHELL_H */

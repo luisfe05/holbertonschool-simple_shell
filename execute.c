@@ -7,17 +7,16 @@
  * @program_name: name of the shell program for error messages
  * @command_count: number of commands executed so far
  *
- * Description: Tries to run the command with execve.
- * If it fails, prints an error and exits.
+ * Description: Tries to run the command with execve using the
+ * full path. If it fails, prints an error and exits with 127.
  */
 void child_process(char **args, char *full_path,
 		char *program_name, int command_count)
 {
-	/* try to run the command with the full path we found */
+	/* Try to run the command with the full path we found */
 	if (execve(full_path, args, environ) == -1)
 	{
-		fprintf(stderr, "%s: %d: %s: not found\n",
-			program_name, command_count, args[0]);
+		print_error(program_name, command_count, args[0]);
 		free(args);
 		free(full_path);
 		exit(127);
@@ -33,53 +32,56 @@ void child_process(char **args, char *full_path,
  * Description: Tokenizes the line, checks for builtins first,
  * then looks up the full path and forks a child to run it.
  * If the command doesn't exist, prints an error without forking.
+ *
+ * Return: -1 if the shell should exit (exit builtin), 0 otherwise
  */
-void execute_command(char *line, char *program_name, int command_count)
+int execute_command(char *line, char *program_name, int command_count)
 {
 	pid_t child_pid;
 	int status;
+	int builtin_result;
 	char **args;
 	char *full_path;
 
-	/* split the line into words */
+	/* Split the line into tokens */
 	args = tokenize(line);
 	if (args == NULL || args[0] == NULL)
 	{
 		free(args);
-		return;
+		return (0);
 	}
 
-	/* check if it's a builtin before doing anything else */
-	if (is_builtin(args, program_name))
-		return;
+	/* Check if it's a builtin before doing anything else */
+	builtin_result = is_builtin(args, program_name);
+	if (builtin_result != 0)
+		return (builtin_result);
 
-	/* find the full path of the command */
+	/* Find the full path of the command BEFORE forking */
 	full_path = find_in_path(args[0]);
 	if (full_path == NULL)
 	{
-		fprintf(stderr, "%s: %d: %s: not found\n",
-			program_name, command_count, args[0]);
+		print_error(program_name, command_count, args[0]);
 		free(args);
-		return;
+		return (0);
 	}
 
-	/* create a child process */
+	/* Create a child process to run the command */
 	child_pid = fork();
 	if (child_pid == -1)
 	{
 		perror(program_name);
 		free(args);
 		free(full_path);
-		return;
+		return (0);
 	}
 
 	if (child_pid == 0)
 		child_process(args, full_path, program_name, command_count);
 	else
 	{
-		/* wait for child to finish then free memory */
 		wait(&status);
 		free(args);
 		free(full_path);
 	}
+	return (0);
 }

@@ -23,8 +23,10 @@ void prompt(void)
  *
  * Description: Strips the trailing newline, skips empty lines,
  * increments the counter and calls execute_command.
+ *
+ * Return: -1 if the shell should exit, 0 otherwise
  */
-void handle_line(char *line, ssize_t nread, char **argv, int *command_count)
+int handle_line(char *line, ssize_t nread, char **argv, int *command_count)
 {
 	/* Replace the trailing '\n' with '\0' to clean the command */
 	if (nread > 0 && line[nread - 1] == '\n')
@@ -32,13 +34,13 @@ void handle_line(char *line, ssize_t nread, char **argv, int *command_count)
 
 	/* If the user just pressed Enter, skip and show prompt again */
 	if (line[0] == '\0')
-		return;
+		return (0);
 
 	/* Count each real execution attempt for error messages */
 	(*command_count)++;
 
-	/* Fork a child and execute the command */
-	execute_command(line, argv[0], *command_count);
+	/* Execute the command and return whether we should exit */
+	return (execute_command(line, argv[0], *command_count));
 }
 
 /**
@@ -48,7 +50,8 @@ void handle_line(char *line, ssize_t nread, char **argv, int *command_count)
  *
  * Description: Main loop of the shell. Reads lines from stdin
  * and passes them to handle_line for cleaning and execution.
- * Exits on EOF (Ctrl+D). Frees all allocated memory before exit.
+ * Exits on EOF (Ctrl+D) or when the exit builtin is used.
+ * Frees all allocated memory before exit.
  *
  * Return: 0 on success
  */
@@ -77,8 +80,9 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		/* Clean the line and execute the command */
-		handle_line(line, nread, argv, &command_count);
+		/* If handle_line returns -1, the exit builtin was used */
+		if (handle_line(line, nread, argv, &command_count) == -1)
+			break;
 	}
 
 	/* Free memory allocated by getline before exiting */
